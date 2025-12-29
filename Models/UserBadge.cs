@@ -1,0 +1,13 @@
+namespace KamuKoprusu.Models;
+
+public class UserBadge
+{
+    public int Id { get; set; }
+    public string UserId { get; set; } = string.Empty;
+    public int BadgeId { get; set; }
+    public DateTime EarnedAt { get; set; } = DateTime.UtcNow;
+    
+    // Navigation properties
+    public ApplicationUser User { get; set; } = null!;
+    public Badge Badge { get; set; } = null!;
+}

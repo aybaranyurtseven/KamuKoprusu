@@ -1,0 +1,145 @@
+﻿@model KamuKoprusu.Models.RegisterViewModel
+@{
+    ViewData["Title"] = "Kayıt Ol";
+    var institutions = ViewBag.Institutions as List<KamuKoprusu.Models.Institution>;
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-10">
+        <h2>@ViewData["Title"]</h2>
+        <p class="text-muted">Şikayet ve Öneri Portalı'na hoş geldiniz. Lütfen kayıt formunu doldurun.</p>
+        <hr />
+        
+        <form asp-action="Register" method="post">
+            <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+            
+            <h5 class="mb-3">Kişisel Bilgiler</h5>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label asp-for="FullName" class="form-label"></label>
+                        <input asp-for="FullName" class="form-control" placeholder="Ad Soyad" />
+                        <span asp-validation-for="FullName" class="text-danger"></span>
+                    </div>
+                </div>
+                
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label asp-for="Email" class="form-label"></label>
+                        <input asp-for="Email" class="form-control" type="email" placeholder="ornek@email.com" />
+                        <span asp-validation-for="Email" class="text-danger"></span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label asp-for="Password" class="form-label"></label>
+                        <input asp-for="Password" class="form-control" type="password" />
+                        <span asp-validation-for="Password" class="text-danger"></span>
+                    </div>
+                </div>
+                
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label asp-for="ConfirmPassword" class="form-label"></label>
+                        <input asp-for="ConfirmPassword" class="form-control" type="password" />
+                        <span asp-validation-for="ConfirmPassword" class="text-danger"></span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label asp-for="PhoneNumber" class="form-label"></label>
+                        <input asp-for="PhoneNumber" class="form-control" type="tel" placeholder="05XX XXX XX XX" />
+                        <span asp-validation-for="PhoneNumber" class="text-danger"></span>
+                    </div>
+                </div>
+                
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label asp-for="Role" class="form-label">Kullanıcı Türü <span class="text-danger">*</span></label>
+                        <select asp-for="Role" id="Role" class="form-select">
+                            <option value="Citizen">Vatandaş</option>
+                            <option value="InstitutionRepresentative">Kurum Temsilcisi</option>
+                        </select>
+                        <span asp-validation-for="Role" class="text-danger"></span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Institution Fields -->
+            <div id="institutionFields" style="display:none;">
+                <h5 class="mb-3 mt-4">Kurum Bilgileri</h5>
+                <div class="alert alert-warning">
+                    <strong>Dikkat:</strong> Kurum temsilcisi başvuruları admin onayı bekler.
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label asp-for="InstitutionId" class="form-label"></label>
+                            <select asp-for="InstitutionId" class="form-select">
+                                <option value="">-- Kurumunuzu Seçin --</option>
+                                @if (institutions != null)
+                                {
+                                    foreach (var inst in institutions)
+                                    {
+                                        <option value="@inst.Id">@inst.Name</option>
+                                    }
+                                }
+                            </select>
+                            <span asp-validation-for="InstitutionId" class="text-danger"></span>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label asp-for="InstitutionCode" class="form-label"></label>
+                            <input asp-for="InstitutionCode" class="form-control" placeholder="Örn: MEB-001" />
+                            <span asp-validation-for="InstitutionCode" class="text-danger"></span>
+                            <small class="text-muted">Kurumunuzun size verdiği kimlik kodunu girin</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="alert alert-info mt-3">
+                <strong>Şifre Gereksinimleri:</strong>
+                <ul class="mb-0">
+                    <li>En az 8 karakter</li>
+                    <li>Bir büyük harf (A-Z)</li>
+                    <li>Bir küçük harf (a-z)</li>
+                    <li>Bir rakam (0-9)</li>
+                    <li>Bir özel karakter (!@@#$%^&amp;*)</li>
+                </ul>
+            </div>
+            
+            <div class="mt-4">
+                <button type="submit" class="btn btn-primary btn-lg">Kayıt Ol</button>
+                <a asp-action="Login" class="btn btn-outline-secondary btn-lg ms-2">Giriş Yap</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    
+    <script>
+        $(document).ready(function() {
+            $('#Role').change(function() {
+                var role = $(this).val();
+                
+                $('#institutionFields').hide();
+                
+                if (role === 'InstitutionRepresentative') {
+                    $('#institutionFields').show();
+                }
+            });
+        });
+    </script>
+}

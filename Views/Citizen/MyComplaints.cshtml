@@ -1,0 +1,157 @@
+﻿@model List<KamuKoprusu.Models.Complaint>
+@{
+    ViewData["Title"] = "Başvurularım";
+    var categories = ViewBag.Categories as List<string> ?? new List<string>();
+}
+
+<h2>@ViewData["Title"]</h2>
+<p class="text-muted">Gönderdiğiniz tüm başvurular</p>
+<hr />
+
+<!-- Advanced Filter Form -->
+<div class="card mb-4">
+    <div class="card-header">
+        <i class="bi bi-funnel me-2"></i>Filtrele
+    </div>
+    <div class="card-body">
+        <form method="get">
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <label class="form-label">Arama</label>
+                    <input type="text" name="search" class="form-control" placeholder="Başlık veya açıklama..." value="@ViewBag.Search" />
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Durum</label>
+                    <select name="status" class="form-select">
+                        <option value="">Tümü</option>
+                        <option value="PendingModeration" selected="@(ViewBag.StatusFilter == "PendingModeration")">Onay Bekliyor</option>
+                        <option value="New" selected="@(ViewBag.StatusFilter == "New")">Yeni</option>
+                        <option value="InProgress" selected="@(ViewBag.StatusFilter == "InProgress")">İşlemde</option>
+                        <option value="Resolved" selected="@(ViewBag.StatusFilter == "Resolved")">Çözüldü</option>
+                        <option value="Rejected" selected="@(ViewBag.StatusFilter == "Rejected")">Reddedildi</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Kategori</label>
+                    <select name="category" class="form-select">
+                        <option value="">Tümü</option>
+                        @foreach (var cat in categories)
+                        {
+                            <option value="@cat" selected="@(ViewBag.CategoryFilter == cat)">@cat</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Başlangıç</label>
+                    <input type="date" name="startDate" class="form-control" value="@(ViewBag.StartDate?.ToString("yyyy-MM-dd"))" />
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Bitiş</label>
+                    <input type="date" name="endDate" class="form-control" value="@(ViewBag.EndDate?.ToString("yyyy-MM-dd"))" />
+                </div>
+                <div class="col-md-1 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-search"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="row mt-3">
+                <div class="col-12 d-flex justify-content-between">
+                    <a href="@Url.Action("MyComplaints")" class="btn btn-outline-secondary btn-sm">
+                        <i class="bi bi-x-circle me-1"></i>Filtreleri Temizle
+                    </a>
+                    <a asp-action="Create" class="btn btn-primary">
+                        <i class="bi bi-plus-lg me-1"></i>Yeni Başvuru
+                    </a>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Results Count -->
+<p class="text-muted mb-3">
+    <strong>@Model.Count</strong> başvuru bulundu
+</p>
+
+<!-- Complaints List -->
+@if (Model != null && Model.Any())
+{
+    <div class="row">
+        @foreach (var complaint in Model)
+        {
+            <div class="col-md-6 mb-3">
+                <div class="card h-100">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <span class="badge bg-@GetStatusColor(complaint.Status)">
+                            @GetStatusText(complaint.Status)
+                        </span>
+                        <small class="text-muted">@complaint.CreatedAt.ToString("dd.MM.yyyy")</small>
+                    </div>
+                    <div class="card-body">
+                        <h5 class="card-title">@complaint.Title</h5>
+                        <p class="card-text text-truncate">@complaint.Description</p>
+                        <p class="mb-1">
+                            <i class="bi bi-building me-1"></i>@complaint.Institution?.Name<br />
+                            <i class="bi bi-tag me-1"></i>@complaint.Category
+                        </p>
+                        @if (!string.IsNullOrEmpty(complaint.Location))
+                        {
+                            <p class="mb-0"><i class="bi bi-geo-alt me-1"></i>@complaint.Location</p>
+                        }
+                    </div>
+                    <div class="card-footer">
+                        <a asp-action="Detail" asp-route-id="@complaint.Id" class="btn btn-sm btn-primary">
+                            <i class="bi bi-eye me-1"></i>Detay
+                        </a>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+else
+{
+    <div class="alert alert-info text-center py-5">
+        <i class="bi bi-inbox fs-1 d-block mb-3"></i>
+        <h5>Başvuru bulunamadı</h5>
+        @if (!string.IsNullOrEmpty((string?)ViewBag.Search) || !string.IsNullOrEmpty((string?)ViewBag.StatusFilter) || 
+             !string.IsNullOrEmpty((string?)ViewBag.CategoryFilter) || ViewBag.StartDate != null || ViewBag.EndDate != null)
+        {
+            <p class="mb-0">Filtrelere uygun başvuru yok. <a href="@Url.Action("MyComplaints")">Filtreleri temizle</a></p>
+        }
+        else
+        {
+            <p class="mb-2">Henüz hiç başvuru göndermediniz.</p>
+            <a asp-action="Create" class="btn btn-primary">İlk başvurunuzu gönderin</a>
+        }
+    </div>
+}
+
+@functions {
+    string GetStatusColor(KamuKoprusu.Enums.ComplaintStatus status)
+    {
+        return status switch
+        {
+            KamuKoprusu.Enums.ComplaintStatus.PendingModeration => "warning",
+            KamuKoprusu.Enums.ComplaintStatus.New => "info",
+            KamuKoprusu.Enums.ComplaintStatus.InProgress => "primary",
+            KamuKoprusu.Enums.ComplaintStatus.Resolved => "success",
+            KamuKoprusu.Enums.ComplaintStatus.Rejected => "danger",
+            _ => "secondary"
+        };
+    }
+
+    string GetStatusText(KamuKoprusu.Enums.ComplaintStatus status)
+    {
+        return status switch
+        {
+            KamuKoprusu.Enums.ComplaintStatus.PendingModeration => "Onay Bekliyor",
+            KamuKoprusu.Enums.ComplaintStatus.New => "Yeni",
+            KamuKoprusu.Enums.ComplaintStatus.InProgress => "İşlemde",
+            KamuKoprusu.Enums.ComplaintStatus.Resolved => "Çözüldü",
+            KamuKoprusu.Enums.ComplaintStatus.Rejected => "Reddedildi",
+            _ => status.ToString()
+        };
+    }
+}

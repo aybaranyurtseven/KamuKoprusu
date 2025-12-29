@@ -1,0 +1,218 @@
+﻿@using Microsoft.AspNetCore.Identity
+@inject UserManager<KamuKoprusu.Models.ApplicationUser> UserManager
+@model List<KamuKoprusu.Models.ApplicationUser>
+@{
+    ViewData["Title"] = "Kullanıcı Yönetimi";
+}
+
+<h2>@ViewData["Title"]</h2>
+<p class="text-muted">Tüm kullanıcıları görüntüle ve yönet</p>
+<hr />
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show">
+        @TempData["Success"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<!-- Search and Filter -->
+<form method="get" class="mb-4">
+    <div class="row g-3">
+        <div class="col-md-4">
+            <input type="text" name="search" class="form-control" placeholder="Ad, e-posta ara..." value="@ViewBag.Search" />
+        </div>
+        <div class="col-md-3">
+            <select name="statusFilter" class="form-select">
+                <option value="">Tüm Durumlar</option>
+                <option value="active" selected="@(ViewBag.StatusFilter == "active")">Aktif</option>
+                <option value="pending" selected="@(ViewBag.StatusFilter == "pending")">Onay Bekleyen</option>
+                <option value="banned" selected="@(ViewBag.StatusFilter == "banned")">Yasaklı</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <button type="submit" class="btn btn-primary w-100">Filtrele</button>
+        </div>
+        <div class="col-md-3 text-end">
+            <a asp-action="InstitutionApprovals" class="btn btn-warning">
+                Onay Bekleyenler (@Model.Count(u => !u.IsApproved))
+            </a>
+        </div>
+    </div>
+</form>
+
+<!-- Users Table -->
+<div class="table-responsive">
+    <table class="table table-hover">
+        <thead>
+            <tr>
+                <th>Ad Soyad</th>
+                <th>Email</th>
+                <th>Kurum</th>
+<th>Rol</th>
+                <th>Durum</th>
+                <th>Kayıt Tarihi</th>
+                <th>İşlemler</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var user in Model)
+            {
+                <tr>
+                    <td>@user.FullName</td>
+                    <td>@user.Email</td>
+                    <td>
+                        @if (user.Institution != null)
+                        {
+                            <span class="badge bg-info">@user.Institution.Name</span>
+                        }
+                        else
+                        {
+                            <span class="text-muted">-</span>
+                        }
+                    </td>
+                    <td>
+                        @foreach (var role in await UserManager.GetRolesAsync(user))
+                        {
+                            <span class="badge bg-primary me-1">@role</span>
+                        }
+                    </td>
+                    <td>
+                        @if (user.IsBanned)
+                        {
+                            <span class="badge bg-danger">Yasaklı</span>
+                        }
+                        else if (!user.IsApproved)
+                        {
+                            <span class="badge bg-warning">Onay Bekliyor</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-success">Aktif</span>
+                        }
+                    </td>
+                    <td>@user.CreatedAt.ToString("dd.MM.yyyy")</td>
+                    <td>
+                        @if (!user.IsApproved && !user.IsBanned)
+                        {
+                            <form asp-action="ApproveUser" asp-route-userId="@user.Id" method="post" class="d-inline">
+                                <button type="submit" class="btn btn-sm btn-success">Onayla</button>
+                            </form>
+                        }
+                        
+                        @if (!user.IsBanned)
+                        {
+                            <button type="button" class="btn btn-sm btn-warning" data-bs-toggle="modal" data-bs-target="#banModal" 
+                                    data-userid="@user.Id" data-username="@user.FullName">
+                                Yasakla
+                            </button>
+                        }
+                        else
+                        {
+                            <form asp-action="UnbanUser" asp-route-userId="@user.Id" method="post" class="d-inline">
+                                <button type="submit" class="btn btn-sm btn-info">Yasağı Kaldır</button>
+                            </form>
+                        }
+                        
+                        <button type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal" 
+                                data-userid="@user.Id" data-username="@user.FullName">
+                            Sil
+                        </button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+@if (!Model.Any())
+{
+    <div class="alert alert-info">
+        Hiç kullanıcı bulunamadı.
+    </div>
+}
+
+<!-- Ban Modal -->
+<div class="modal fade" id="banModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-warning">
+                <h5 class="modal-title">Kullanıcıyı Yasakla</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="banForm" asp-action="BanUser" method="post">
+                <div class="modal-body">
+                    <input type="hidden" name="userId" id="banUserId" />
+                    <p>Kullanıcı: <strong id="banUserName"></strong></p>
+                    
+                    <div class="mb-3">
+                        <label for="banReason" class="form-label">Yasaklama Nedeni</label>
+                        <textarea name="reason" id="banReason" class="form-control" rows="3" required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+                    <button type="submit" class="btn btn-warning">Yasakla</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Delete User Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">Kullanıcıyı Sil</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="deleteForm" asp-action="DeleteUser" method="post">
+                <div class="modal-body">
+                    <input type="hidden" name="userId" id="deleteUserId" />
+                    <div class="alert alert-danger">
+                        <strong>⚠️ Uyarı:</strong> Bu işlem geri alınamaz!
+                    </div>
+                    <p>Kullanıcı: <strong id="deleteUserName"></strong></p>
+                    <p class="text-danger"><strong>Bu kullanıcının email ve telefon numarası kalıcı olarak engellenecektir.</strong></p>
+                    
+                    <div class="mb-3">
+                        <label for="deleteReason" class="form-label">Silme Nedeni <span class="text-danger">*</span></label>
+                        <textarea name="reason" id="deleteReason" class="form-control" rows="3" required placeholder="Kullanıcının neden silindiğini açıklayın..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+                    <button type="submit" class="btn btn-danger">Kullanıcıyı Sil</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Ban Modal
+        var banModal = document.getElementById('banModal');
+        banModal.addEventListener('show.bs.modal', function (event) {
+            var button = event.relatedTarget;
+            var userId = button.getAttribute('data-userid');
+            var userName = button.getAttribute('data-username');
+            
+            document.getElementById('banUserId').value = userId;
+            document.getElementById('banUserName').textContent = userName;
+        });
+        
+        // Delete Modal
+        var deleteModal = document.getElementById('deleteModal');
+        deleteModal.addEventListener('show.bs.modal', function (event) {
+            var button = event.relatedTarget;
+            var userId = button.getAttribute('data-userid');
+            var userName = button.getAttribute('data-username');
+            
+            document.getElementById('deleteUserId').value = userId;
+            document.getElementById('deleteUserName').textContent = userName;
+        });
+    </script>
+}

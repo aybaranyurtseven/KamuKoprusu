@@ -1,0 +1,75 @@
+@model KamuKoprusu.Models.Institution
+@{
+    ViewData["Title"] = "Kurum Bilgilerini Düzenle";
+}
+
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="bi bi-pencil me-2"></i>@ViewData["Title"]</h2>
+                <a asp-action="Profile" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left me-1"></i> Profil
+                </a>
+            </div>
+
+            <div class="card">
+                <div class="card-body">
+                    <form asp-action="EditProfile" method="post">
+                        <input type="hidden" asp-for="Id" />
+                        <input type="hidden" asp-for="Name" />
+                        <input type="hidden" asp-for="Type" />
+                        <input type="hidden" asp-for="InstitutionCode" />
+
+                        <div class="alert alert-info mb-4">
+                            <i class="bi bi-info-circle me-2"></i>
+                            <strong>@Model.Name</strong> kurumu için bilgileri düzenliyorsunuz.
+                            <br /><small>Kurum adı ve kodu yönetici tarafından değiştirilebilir.</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="About" class="form-label">Kurum Hakkında</label>
+                            <textarea asp-for="About" class="form-control" rows="4" 
+                                      placeholder="Kurumunuz hakkında kısa bir bilgi..."></textarea>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Address" class="form-label">Adres</label>
+                            <textarea asp-for="Address" class="form-control" rows="2"
+                                      placeholder="Tam adres"></textarea>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label asp-for="Phone" class="form-label">Telefon</label>
+                                    <input asp-for="Phone" class="form-control" placeholder="0xxx xxx xx xx" />
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label asp-for="Email" class="form-label">E-posta</label>
+                                    <input asp-for="Email" class="form-control" type="email" 
+                                           placeholder="iletisim@kurum.gov.tr" />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Website" class="form-label">Web Sitesi</label>
+                            <input asp-for="Website" class="form-control" type="url" 
+                                   placeholder="https://www.kurum.gov.tr" />
+                        </div>
+
+                        <div class="mt-4">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-lg me-1"></i> Kaydet
+                            </button>
+                            <a asp-action="Profile" class="btn btn-outline-secondary ms-2">İptal</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

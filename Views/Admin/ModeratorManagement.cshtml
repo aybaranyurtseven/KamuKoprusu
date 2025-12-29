@@ -1,0 +1,144 @@
+@model IEnumerable<KamuKoprusu.Models.ApplicationUser>
+@{
+    ViewData["Title"] = "Moderatör Yönetimi";
+    var availableUsers = ViewBag.AvailableUsers as List<KamuKoprusu.Models.ApplicationUser>;
+}
+
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="bi bi-shield-check me-2"></i>@ViewData["Title"]</h2>
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#assignModeratorModal">
+            <i class="bi bi-plus-lg me-1"></i> Yeni Moderatör Ata
+        </button>
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show">
+            @TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show">
+            @TempData["Error"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <!-- Stats Cards -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <h3 class="mb-0">@Model.Count()</h3>
+                    <small>Aktif Moderatör</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Moderators List -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">Aktif Moderatörler</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Ad Soyad</th>
+                            <th>E-posta</th>
+                            <th>Kayıt Tarihi</th>
+                            <th>Durum</th>
+                            <th>İşlemler</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var moderator in Model)
+                        {
+                            <tr>
+                                <td>
+                                    <i class="bi bi-person-badge me-2 text-primary"></i>
+                                    <strong>@moderator.FullName</strong>
+                                </td>
+                                <td>@moderator.Email</td>
+                                <td>@moderator.CreatedAt.ToString("dd.MM.yyyy")</td>
+                                <td>
+                                    @if (moderator.IsBanned)
+                                    {
+                                        <span class="badge bg-danger">Yasaklı</span>
+                                    }
+                                    else if (!moderator.IsApproved)
+                                    {
+                                        <span class="badge bg-warning text-dark">Onay Bekliyor</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-success">Aktif</span>
+                                    }
+                                </td>
+                                <td>
+                                    <form asp-action="RemoveModerator" method="post" class="d-inline" onsubmit="return confirm('Bu kullanıcıyı moderatörlükten çıkarmak istediğinize emin misiniz?');">
+                                        <input type="hidden" name="userId" value="@moderator.Id" />
+                                        <button type="submit" class="btn btn-sm btn-outline-danger" title="Moderatörlükten Çıkar">
+                                            <i class="bi bi-person-dash"></i> Çıkar
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            @if (!Model.Any())
+            {
+                <div class="text-center py-5 text-muted">
+                    <i class="bi bi-shield-x fs-1"></i>
+                    <p class="mt-2">Henüz moderatör atanmamış.</p>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- Assign Moderator Modal -->
+<div class="modal fade" id="assignModeratorModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Yeni Moderatör Ata</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form asp-action="AssignModerator" method="post">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Kullanıcı Seç</label>
+                        <select name="userId" class="form-select" required>
+                            <option value="">-- Kullanıcı Seçin --</option>
+                            @if (availableUsers != null)
+                            {
+                                foreach (var user in availableUsers)
+                                {
+                                    <option value="@user.Id">@user.FullName (@user.Email)</option>
+                                }
+                            }
+                        </select>
+                    </div>
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle me-1"></i>
+                        Moderatörler içerik incelemesi yapabilir, uyarı verebilir ve uygunsuz içerikleri yönetebilir.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+                    <button type="submit" class="btn btn-primary">Moderatör Olarak Ata</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

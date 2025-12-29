@@ -1,0 +1,251 @@
+@model KamuKoprusu.Models.Institution
+@{
+    ViewData["Title"] = "Kurum Paneli";
+    var stats = ViewBag.Stats;
+    var resolutionRate = ViewBag.ResolutionRate;
+    var recentComplaints = ViewBag.RecentComplaints as List<KamuKoprusu.Models.Complaint>;
+}
+
+<div class="container">
+    <div class="row">
+        <!-- Institution Info -->
+        <div class="col-lg-4 mb-4">
+            <div class="card">
+                <div class="card-body text-center">
+                    <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center mx-auto mb-3" 
+                         style="width: 100px; height: 100px; font-size: 2rem;">
+                        <i class="bi bi-building"></i>
+                    </div>
+                    <h4>@Model.Name</h4>
+                    <span class="badge bg-secondary mb-3">@Model.Type</span>
+                    
+                    @if (!string.IsNullOrEmpty(Model.About))
+                    {
+                        <p class="text-muted">@Model.About</p>
+                    }
+
+                    <hr />
+
+                    <div class="text-start">
+                        @if (!string.IsNullOrEmpty(Model.Address))
+                        {
+                            <p class="mb-2"><i class="bi bi-geo-alt me-2"></i>@Model.Address</p>
+                        }
+                        @if (!string.IsNullOrEmpty(Model.Phone))
+                        {
+                            <p class="mb-2"><i class="bi bi-telephone me-2"></i>@Model.Phone</p>
+                        }
+                        @if (!string.IsNullOrEmpty(Model.Email))
+                        {
+                            <p class="mb-2"><i class="bi bi-envelope me-2"></i>@Model.Email</p>
+                        }
+                        @if (!string.IsNullOrEmpty(Model.Website))
+                        {
+                            <p class="mb-2"><i class="bi bi-globe me-2"></i><a href="@Model.Website" target="_blank">@Model.Website</a></p>
+                        }
+                    </div>
+
+                    <a asp-action="EditProfile" class="btn btn-outline-primary mt-3">
+                        <i class="bi bi-pencil me-1"></i> Bilgileri Düzenle
+                    </a>
+                </div>
+            </div>
+
+            <!-- Institution Code Card -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="bi bi-key me-2"></i>Kurum Kodu</h6>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted small mb-2">Yeni temsilciler bu kodu kullanarak kayıt olabilir:</p>
+                    <div class="bg-light p-3 rounded text-center">
+                        <code class="fs-4">@Model.InstitutionCode</code>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="col-lg-8">
+            @if (TempData["Success"] != null)
+            {
+                <div class="alert alert-success alert-dismissible fade show">
+                    @TempData["Success"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            }
+
+            <!-- Stats Cards -->
+            <div class="row g-3 mb-4">
+                <div class="col-6 col-md-3">
+                    <div class="card bg-primary text-white h-100">
+                        <div class="card-body text-center py-3">
+                            <h3 class="mb-0">@stats.TotalComplaints</h3>
+                            <small>Toplam</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="card bg-info text-white h-100">
+                        <div class="card-body text-center py-3">
+                            <h3 class="mb-0">@stats.PendingComplaints</h3>
+                            <small>Yeni</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="card bg-warning text-dark h-100">
+                        <div class="card-body text-center py-3">
+                            <h3 class="mb-0">@stats.InProgressComplaints</h3>
+                            <small>İşlemde</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="card bg-success text-white h-100">
+                        <div class="card-body text-center py-3">
+                            <h3 class="mb-0">@stats.ResolvedComplaints</h3>
+                            <small>Çözüldü</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Performance Card -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-graph-up me-2"></i>Performans</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <h6>Çözüm Oranı</h6>
+                            <div class="progress" style="height: 25px;">
+                                <div class="progress-bar bg-success" style="width: @resolutionRate%;">
+                                    @resolutionRate%
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 text-center">
+                            <h3 class="text-primary mb-0">@stats.RepresentativeCount</h3>
+                            <small class="text-muted">Temsilci</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Complaints Table -->
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="bi bi-clock-history me-2"></i>Son Gelen Başvurular</h5>
+                    <a asp-action="Complaints" class="btn btn-light btn-sm">Tümünü Gör</a>
+                </div>
+                <div class="card-body">
+                    @if (recentComplaints != null && recentComplaints.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Başlık</th>
+                                        <th>Kategori</th>
+                                        <th>Gönderen</th>
+                                        <th>Tarih</th>
+                                        <th>Durum</th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var complaint in recentComplaints.Take(5))
+                                    {
+                                        <tr>
+                                            <td class="text-truncate" style="max-width: 150px;">@complaint.Title</td>
+                                            <td>@complaint.Category</td>
+                                            <td>
+                                                @if (complaint.IsAnonymous)
+                                                {
+                                                    <span class="text-muted">Anonim</span>
+                                                }
+                                                else
+                                                {
+                                                    @complaint.User?.FullName
+                                                }
+                                            </td>
+                                            <td>@complaint.CreatedAt.ToString("dd.MM.yyyy")</td>
+                                            <td>
+                                                <span class="badge bg-@GetStatusColor(complaint.Status)">
+                                                    @GetStatusText(complaint.Status)
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <a asp-action="Detail" asp-route-id="@complaint.Id" class="btn btn-sm btn-outline-primary">
+                                                    <i class="bi bi-eye"></i>
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center py-4 text-muted">
+                            <i class="bi bi-inbox fs-1"></i>
+                            <p class="mt-2 mb-0">Henüz başvuru bulunmuyor.</p>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <!-- Quick Links -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-lightning me-2"></i>Hızlı Erişim</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <a asp-action="Complaints" class="btn btn-outline-primary w-100 py-3">
+                                <i class="bi bi-file-earmark-text d-block fs-3 mb-1"></i>
+                                Tüm Başvurular
+                            </a>
+                        </div>
+                        <div class="col-md-6">
+                            <a asp-action="Complaints" asp-route-status="New" class="btn btn-outline-warning w-100 py-3">
+                                <i class="bi bi-hourglass-split d-block fs-3 mb-1"></i>
+                                Bekleyenler (@stats.PendingComplaints)
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@functions {
+    string GetStatusColor(KamuKoprusu.Enums.ComplaintStatus status)
+    {
+        return status switch
+        {
+            KamuKoprusu.Enums.ComplaintStatus.New => "info",
+            KamuKoprusu.Enums.ComplaintStatus.InProgress => "warning",
+            KamuKoprusu.Enums.ComplaintStatus.Resolved => "success",
+            KamuKoprusu.Enums.ComplaintStatus.Rejected => "danger",
+            _ => "secondary"
+        };
+    }
+
+    string GetStatusText(KamuKoprusu.Enums.ComplaintStatus status)
+    {
+        return status switch
+        {
+            KamuKoprusu.Enums.ComplaintStatus.New => "Yeni",
+            KamuKoprusu.Enums.ComplaintStatus.InProgress => "İşlemde",
+            KamuKoprusu.Enums.ComplaintStatus.Resolved => "Çözüldü",
+            KamuKoprusu.Enums.ComplaintStatus.Rejected => "Reddedildi",
+            _ => status.ToString()
+        };
+    }
+}

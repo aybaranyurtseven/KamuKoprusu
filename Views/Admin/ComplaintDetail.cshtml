@@ -1,0 +1,193 @@
+@model KamuKoprusu.Models.Complaint
+@{
+    ViewData["Title"] = "Başvuru Detayı";
+}
+
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="bi bi-file-earmark-text me-2"></i>Başvuru #@Model.Id</h2>
+        <a asp-action="Complaints" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-1"></i> Geri Dön
+        </a>
+    </div>
+
+    <div class="row">
+        <!-- Main Content -->
+        <div class="col-lg-8">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">@Model.Title</h5>
+                </div>
+                <div class="card-body">
+                    <p class="lead">@Model.Description</p>
+                    
+                    @if (Model.MediaFiles != null && Model.MediaFiles.Any())
+                    {
+                        <hr />
+                        <h6>Ekli Dosyalar</h6>
+                        <div class="row">
+                            @foreach (var media in Model.MediaFiles)
+                            {
+                                <div class="col-md-4 mb-3">
+                                    @if (media.Type == KamuKoprusu.Enums.MediaType.Photo)
+                                    {
+                                        <img src="@media.FilePath" class="img-fluid rounded" alt="@media.FileName" />
+                                    }
+                                    else
+                                    {
+                                        <div class="p-3 bg-light rounded text-center">
+                                            <i class="bi bi-file-earmark-play fs-1"></i>
+                                            <p class="mb-0 small">@media.FileName</p>
+                                        </div>
+                                    }
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <!-- Updates Timeline -->
+            @if (Model.Updates != null && Model.Updates.Any())
+            {
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Güncelleme Geçmişi</h5>
+                    </div>
+                    <div class="card-body">
+                        @foreach (var update in Model.Updates.OrderByDescending(u => u.CreatedAt))
+                        {
+                            <div class="d-flex mb-3">
+                                <div class="flex-shrink-0">
+                                    <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                                        <i class="bi bi-arrow-right"></i>
+                                    </div>
+                                </div>
+                                <div class="flex-grow-1 ms-3">
+                                    <div class="d-flex justify-content-between">
+                                        <strong>@(update.UpdatedBy?.FullName ?? "Sistem")</strong>
+                                        <small class="text-muted">@update.CreatedAt.ToString("dd.MM.yyyy HH:mm")</small>
+                                    </div>
+                                    <p class="mb-1">@update.Message</p>
+                                    <span class="badge bg-info">Durum: @update.NewStatus</span>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Başvuru Bilgileri</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-sm">
+                        <tr>
+                            <th>Durum</th>
+                            <td>
+                                @{
+                                    var statusClass = Model.Status switch
+                                    {
+                                        KamuKoprusu.Enums.ComplaintStatus.PendingModeration => "bg-warning text-dark",
+                                        KamuKoprusu.Enums.ComplaintStatus.New => "bg-info",
+                                        KamuKoprusu.Enums.ComplaintStatus.InProgress => "bg-primary",
+                                        KamuKoprusu.Enums.ComplaintStatus.Resolved => "bg-success",
+                                        KamuKoprusu.Enums.ComplaintStatus.Rejected => "bg-danger",
+                                        _ => "bg-secondary"
+                                    };
+                                }
+                                <span class="badge @statusClass">@Model.Status</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>Tür</th>
+                            <td>@Model.Type</td>
+                        </tr>
+                        <tr>
+                            <th>Kategori</th>
+                            <td>@Model.Category</td>
+                        </tr>
+                        <tr>
+                            <th>Kurum</th>
+                            <td>@Model.Institution?.Name</td>
+                        </tr>
+                        <tr>
+                            <th>Gönderen</th>
+                            <td>
+                                @if (Model.IsAnonymous)
+                                {
+                                    <span class="text-muted">Anonim</span>
+                                }
+                                else
+                                {
+                                    @Model.User?.FullName
+                                }
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>Gönderim</th>
+                            <td>@Model.CreatedAt.ToString("dd.MM.yyyy HH:mm")</td>
+                        </tr>
+                        @if (Model.ResolvedAt.HasValue)
+                        {
+                            <tr>
+                                <th>Çözüm</th>
+                                <td>@Model.ResolvedAt.Value.ToString("dd.MM.yyyy HH:mm")</td>
+                            </tr>
+                        }
+                        @if (!string.IsNullOrEmpty(Model.Location))
+                        {
+                            <tr>
+                                <th>Konum</th>
+                                <td>@Model.Location</td>
+                            </tr>
+                        }
+                    </table>
+                </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">İşlemler</h5>
+                </div>
+                <div class="card-body">
+                    <button type="button" class="btn btn-danger w-100" data-bs-toggle="modal" data-bs-target="#deleteModal">
+                        <i class="bi bi-trash me-1"></i> Başvuruyu Sil
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Başvuru Sil</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form asp-action="DeleteComplaint" method="post">
+                <div class="modal-body">
+                    <input type="hidden" name="id" value="@Model.Id" />
+                    <p>Bu başvuruyu silmek istediğinizden emin misiniz?</p>
+                    <p><strong>@Model.Title</strong></p>
+                    <div class="mb-3">
+                        <label class="form-label">Silme Nedeni</label>
+                        <textarea name="reason" class="form-control" rows="2" required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+                    <button type="submit" class="btn btn-danger">Sil</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

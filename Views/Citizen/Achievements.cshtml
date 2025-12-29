@@ -1,0 +1,177 @@
+@{
+    ViewData["Title"] = "Başarımlarım";
+    var userBadges = ViewBag.UserBadges as List<KamuKoprusu.Models.UserBadge>;
+    var allBadges = ViewBag.AllBadges as List<KamuKoprusu.Models.Badge>;
+    var earnedBadgeIds = userBadges?.Select(ub => ub.BadgeId).ToHashSet() ?? new HashSet<int>();
+}
+
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="bi bi-trophy me-2"></i>@ViewData["Title"]</h2>
+        <a asp-action="Profile" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-1"></i> Profil
+        </a>
+    </div>
+
+    <!-- Earned Badges -->
+    <div class="card mb-4">
+        <div class="card-header bg-success text-white">
+            <h5 class="mb-0"><i class="bi bi-award-fill me-2"></i>Kazanılan Rozetler (@(userBadges?.Count ?? 0))</h5>
+        </div>
+        <div class="card-body">
+            @if (userBadges != null && userBadges.Any())
+            {
+                <div class="row">
+                    @foreach (var ub in userBadges)
+                    {
+                        <div class="col-md-3 col-6 mb-4">
+                            <div class="card h-100 border-success">
+                                <div class="card-body text-center">
+                                    <div class="rounded-circle bg-success text-white d-flex align-items-center justify-content-center mx-auto mb-3" 
+                                         style="width: 80px; height: 80px;">
+                                        <i class="bi @(ub.Badge?.IconClass ?? "bi-award")" style="font-size: 2.5rem;"></i>
+                                    </div>
+                                    <h6 class="card-title">@ub.Badge?.Name</h6>
+                                    <p class="card-text small text-muted">@ub.Badge?.Description</p>
+                                    <span class="badge bg-success">
+                                        <i class="bi bi-check-circle me-1"></i>
+                                        @ub.EarnedAt.ToString("dd.MM.yyyy")
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="text-center py-5 text-muted">
+                    <i class="bi bi-emoji-frown fs-1"></i>
+                    <p class="mt-2">Henüz rozet kazanmadınız.</p>
+                    <p class="small">Başvuru göndererek ilk rozetinizi kazanın!</p>
+                    <a asp-action="Create" class="btn btn-primary">
+                        <i class="bi bi-plus-lg me-1"></i> Başvuru Gönder
+                    </a>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Locked Badges -->
+    <div class="card">
+        <div class="card-header bg-secondary text-white">
+            <h5 class="mb-0"><i class="bi bi-lock-fill me-2"></i>Kilitli Rozetler</h5>
+        </div>
+        <div class="card-body">
+            @if (allBadges != null)
+            {
+                var lockedBadges = allBadges.Where(b => !earnedBadgeIds.Contains(b.Id)).ToList();
+                
+                if (lockedBadges.Any())
+                {
+                    <div class="row">
+                        @foreach (var badge in lockedBadges)
+                        {
+                            <div class="col-md-3 col-6 mb-4">
+                                <div class="card h-100 bg-light">
+                                    <div class="card-body text-center">
+                                        <div class="rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center mx-auto mb-3 position-relative" 
+                                             style="width: 80px; height: 80px; opacity: 0.5;">
+                                            <i class="bi @(badge.IconClass ?? "bi-award")" style="font-size: 2.5rem;"></i>
+                                            <i class="bi bi-lock-fill position-absolute" 
+                                               style="font-size: 1.2rem; bottom: 0; right: 0; color: #333;"></i>
+                                        </div>
+                                        <h6 class="card-title text-muted">@badge.Name</h6>
+                                        <p class="card-text small text-muted">@badge.Description</p>
+                                        <span class="badge bg-secondary">
+                                            @GetRequirementText(badge)
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="text-center py-4 text-success">
+                        <i class="bi bi-trophy-fill fs-1"></i>
+                        <p class="mt-2 mb-0">Tebrikler! Tüm rozetleri kazandınız!</p>
+                    </div>
+                }
+            }
+        </div>
+    </div>
+
+    <!-- Level Progress Section -->
+    <div class="card mt-4">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0"><i class="bi bi-graph-up-arrow me-2"></i>Seviye Sistemi</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Seviye</th>
+                            <th>Gerekli Puan</th>
+                            <th>Açıklama</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><span class="badge" style="background: #cd7f32;">🥉 Bronz</span></td>
+                            <td>0 puan</td>
+                            <td>Başlangıç seviyesi</td>
+                        </tr>
+                        <tr>
+                            <td><span class="badge bg-secondary">🥈 Gümüş</span></td>
+                            <td>50 puan</td>
+                            <td>Aktif vatandaş</td>
+                        </tr>
+                        <tr>
+                            <td><span class="badge" style="background: #ffd700; color: #333;">🥇 Altın</span></td>
+                            <td>100 puan</td>
+                            <td>Deneyimli katılımcı</td>
+                        </tr>
+                        <tr>
+                            <td><span class="badge bg-info">💎 Platin</span></td>
+                            <td>200 puan</td>
+                            <td>Toplum lideri</td>
+                        </tr>
+                        <tr>
+                            <td><span class="badge bg-primary">👑 Elmas</span></td>
+                            <td>500 puan</td>
+                            <td>Efsane vatandaş</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="alert alert-info mt-3">
+                <h6 class="alert-heading"><i class="bi bi-info-circle me-2"></i>Puan Kazanma Yolları</h6>
+                <ul class="mb-0">
+                    <li><strong>Başvuru göndermek:</strong> +5 puan</li>
+                    <li><strong>Başvurunun çözülmesi:</strong> +20 puan</li>
+                    <li><strong>Medya dosyası eklemek:</strong> +3 puan</li>
+                    <li><strong>Rozet kazanmak:</strong> Rozete göre değişir</li>
+                    <li class="text-danger"><strong>Uyarı almak:</strong> -20 puan</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+@functions {
+    string GetRequirementText(KamuKoprusu.Models.Badge badge)
+    {
+        return badge.CriteriaType switch
+        {
+            "ComplaintSubmitted" => $"{badge.RequiredCount} başvuru gerekli",
+            "ComplaintResolved" => $"{badge.RequiredCount} çözülen başvuru gerekli",
+            "MediaUploaded" => $"{badge.RequiredCount} medyalı başvuru gerekli",
+            "QuickResolution" => "3 günde çözülen başvuru gerekli",
+            _ => $"{badge.RequiredCount} adet gerekli"
+        };
+    }
+}

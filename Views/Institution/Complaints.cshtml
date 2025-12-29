@@ -1,0 +1,136 @@
+﻿@model List<KamuKoprusu.Models.Complaint>
+@{
+    ViewData["Title"] = "Tüm Şikayetler";
+}
+
+<h2>@ViewData["Title"]</h2>
+<p class="text-muted">Kurumunuza gelen tüm şikayetler</p>
+<hr />
+
+<!-- Search and Filter -->
+<form method="get" class="mb-4">
+    <div class="row g-3">
+        <div class="col-md-5">
+            <input type="text" name="search" class="form-control" placeholder="Başlık veya açıklama ara..." value="@ViewBag.Search" />
+        </div>
+        <div class="col-md-4">
+            <select name="status" class="form-select">
+                <option value="">Tüm Durumlar</option>
+                <option value="New" selected="@(ViewBag.StatusFilter == "New")">Yeni</option>
+                <option value="Viewed" selected="@(ViewBag.StatusFilter == "Viewed")">Görüldü</option>
+                <option value="InProgress" selected="@(ViewBag.StatusFilter == "InProgress")">İşlemde</option>
+                <option value="Resolved" selected="@(ViewBag.StatusFilter == "Resolved")">Çözüldü</option>
+                <option value="Closed" selected="@(ViewBag.StatusFilter == "Closed")">Kapatıldı</option>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <button type="submit" class="btn btn-primary w-100">Filtrele</button>
+        </div>
+    </div>
+</form>
+
+<!-- Complaints Table -->
+@if (Model != null && Model.Any())
+{
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Başlık</th>
+                            <th>Kategori</th>
+                            <th>Gönderen</th>
+                            <th>Tarih</th>
+                            <th>Durum</th>
+                            <th>İşlem</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var complaint in Model)
+                        {
+                            <tr>
+                                <td>@complaint.Id</td>
+                                <td>
+                                    <strong>@complaint.Title</strong>
+                                    <br />
+                                    <small class="text-muted text-truncate d-inline-block" style="max-width: 200px;">
+                                        @complaint.Description
+                                    </small>
+                                </td>
+                                <td>@complaint.Category</td>
+                                <td>
+                                    @if (complaint.IsAnonymous)
+                                    {
+                                        <span class="text-muted">Anonim</span>
+                                    }
+                                    else
+                                    {
+                                        @complaint.User?.FullName
+                                    }
+                                </td>
+                                <td>@complaint.CreatedAt.ToString("dd.MM.yyyy")</td>
+                                <td>
+                                    <span class="badge bg-@GetStatusColor(complaint.Status)">
+                                        @GetStatusText(complaint.Status)
+                                    </span>
+                                </td>
+                                <td>
+                                    <a asp-action="Detail" asp-route-id="@complaint.Id" class="btn btn-sm btn-primary">
+                                        Detay
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+}
+else
+{
+    <div class="alert alert-info">
+        <h5>Şikayet bulunamadı</h5>
+        <p class="mb-0">
+            @if (!string.IsNullOrEmpty(ViewBag.Search as string) || !string.IsNullOrEmpty(ViewBag.StatusFilter as string))
+            {
+                <text>Filtrelere uygun şikayet bulunamadı. </text>
+                <a href="@Url.Action("Complaints")">Tüm şikayetleri göster</a>
+            }
+            else
+            {
+                <text>Henüz kurumunuza şikayet gelmemiş.</text>
+            }
+        </p>
+    </div>
+}
+
+@functions {
+    string GetStatusColor(KamuKoprusu.Enums.ComplaintStatus status)
+    {
+        return status switch
+        {
+            KamuKoprusu.Enums.ComplaintStatus.New => "info",
+            KamuKoprusu.Enums.ComplaintStatus.Viewed => "secondary",
+            KamuKoprusu.Enums.ComplaintStatus.InProgress => "warning",
+            KamuKoprusu.Enums.ComplaintStatus.Resolved => "success",
+            KamuKoprusu.Enums.ComplaintStatus.Closed => "dark",
+            _ => "secondary"
+        };
+    }
+
+    string GetStatusText(KamuKoprusu.Enums.ComplaintStatus status)
+    {
+        return status switch
+        {
+            KamuKoprusu.Enums.ComplaintStatus.New => "Yeni",
+            KamuKoprusu.Enums.ComplaintStatus.Viewed => "Görüldü",
+            KamuKoprusu.Enums.ComplaintStatus.InProgress => "İşlemde",
+            KamuKoprusu.Enums.ComplaintStatus.Resolved => "Çözüldü",
+            KamuKoprusu.Enums.ComplaintStatus.Closed => "Kapatıldı",
+            _ => status.ToString()
+        };
+    }
+}

@@ -1,0 +1,98 @@
+﻿@model List<KamuKoprusu.Models.ApplicationUser>
+@{
+    ViewData["Title"] = "Kurum Temsilcisi Onayları";
+}
+
+<h2>@ViewData["Title"]</h2>
+<p class="text-muted">Onay bekleyen kurum temsilcisi başvurularını görüntüle ve onayla</p>
+<hr />
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show">
+        @TempData["Success"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+@if (!Model.Any())
+{
+    <div class="alert alert-info">
+        <h5>Onay bekleyen başvuru bulunmuyor</h5>
+        <p class="mb-0">Tüm kurum temsilcisi başvuruları onaylanmış.</p>
+    </div>
+}
+else
+{
+    <div class="alert alert-warning mb-4">
+        <strong>@Model.Count</strong> kurum temsilcisi başvurusu onay bekliyor.
+    </div>
+
+    <div class="row">
+        @foreach (var user in Model)
+        {
+            <div class="col-md-6 mb-3">
+                <div class="card">
+                    <div class="card-header bg-warning text-dark">
+                        <h5 class="mb-0">@user.FullName</h5>
+                    </div>
+                    <div class="card-body">
+                        <dl class="row mb-0">
+                            <dt class="col-sm-4">E-posta:</dt>
+                            <dd class="col-sm-8">@user.Email</dd>
+                            
+                            <dt class="col-sm-4">Telefon:</dt>
+                            <dd class="col-sm-8">@(user.PhoneNumber ?? "Belirtilmemiş")</dd>
+                            
+                            <dt class="col-sm-4">Başvuru Tarihi:</dt>
+                            <dd class="col-sm-8">@user.CreatedAt.ToString("dd MMMM yyyy HH:mm")</dd>
+                        </dl>
+                    </div>
+                    <div class="card-footer">
+                        <form asp-action="ApproveUser" method="post" class="d-inline">
+                            <input type="hidden" name="userId" value="@user.Id" />
+                            <button type="submit" class="btn btn-success">
+                                <i class="bi bi-check-circle"></i> Onayla
+                            </button>
+                        </form>
+                        
+                        <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#rejectModal@(user.Id)">
+                            <i class="bi bi-x-circle"></i> Reddet
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Reject Modal -->
+                <div class="modal fade" id="rejectModal@(user.Id)" tabindex="-1">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <form asp-action="BanUser" method="post">
+                                <div class="modal-header">
+                                    <h5 class="modal-title">Başvuruyu Reddet</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <input type="hidden" name="userId" value="@user.Id" />
+                                    <p>@user.FullName kullanıcısının başvurusunu reddetmek istediğinizden emin misiniz?</p>
+                                    <div class="mb-3">
+                                        <label class="form-label">Ret Nedeni</label>
+                                        <textarea name="reason" class="form-control" rows="3" required placeholder="Kimlik doğrulaması yetersiz"></textarea>
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+                                    <button type="submit" class="btn btn-danger">Reddet</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+
+<div class="mt-4">
+    <a asp-action="Dashboard" class="btn btn-outline-secondary">Dashboard'a Dön</a>
+    <a asp-action="Users" class="btn btn-outline-primary">Tüm Kullanıcılar</a>
+</div>

@@ -1,0 +1,194 @@
+﻿@model KamuKoprusu.Models.Complaint
+@{
+    ViewData["Title"] = "Şikayet Detayı - Kurum";
+}
+
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a asp-action="Dashboard">Dashboard</a></li>
+        <li class="breadcrumb-item"><a asp-action="Complaints">Şikayetler</a></li>
+        <li class="breadcrumb-item active">@Model.Title</li>
+    </ol>
+</nav>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show">
+        @TempData["Success"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card mb-3">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">@Model.Title</h5>
+                <span class="badge bg-@GetStatusColor(Model.Status) fs-6">
+                    @GetStatusText(Model.Status)
+                </span>
+            </div>
+            <div class="card-body">
+                <p class="card-text">@Model.Description</p>
+                
+                <hr />
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <p class="mb-1"><strong>Gönderen:</strong> 
+                            @if (Model.IsAnonymous)
+                            {
+                                <span class="text-muted">Anonim</span>
+                            }
+                            else
+                            {
+                                @Model.User?.FullName
+                                <br /><small class="text-muted">@Model.User?.Email</small>
+                            }
+                        </p>
+                        <p class="mb-1"><strong>Kategori:</strong> @Model.Category</p>
+                        <p class="mb-1"><strong>Tür:</strong> @Model.Type</p>
+                    </div>
+                    <div class="col-md-6">
+                        <p class="mb-1"><strong>Gönderim Tarihi:</strong> @Model.CreatedAt.ToString("dd MMMM yyyy HH:mm")</p>
+                        @if (Model.ResolvedAt.HasValue)
+                        {
+                            <p class="mb-1"><strong>Çözüm Tarihi:</strong> @Model.ResolvedAt.Value.ToString("dd MMMM yyyy HH:mm")</p>
+                        }
+                        @if (!string.IsNullOrEmpty(Model.Location))
+                        {
+                            <p class="mb-1"><strong>Konum:</strong> @Model.Location</p>
+                        }
+                    </div>
+                </div>
+
+                @if (Model.MediaFiles != null && Model.MediaFiles.Any())
+                {
+                    <hr />
+                    <h6>Ekli Medya Dosyaları</h6>
+                    <div class="row g-2">
+                        @foreach (var media in Model.MediaFiles)
+                        {
+                            <div class="col-md-3">
+                                @if (media.Type == KamuKoprusu.Enums.MediaType.Photo)
+                                {
+                                    <img src="@media.FilePath" class="img-thumbnail" alt="@media.FileName" />
+                                }
+                                else if (media.Type == KamuKoprusu.Enums.MediaType.Video)
+                                {
+                                    <video controls class="img-thumbnail w-100">
+                                        <source src="@media.FilePath" />
+                                    </video>
+                                }
+                                else if (media.Type == KamuKoprusu.Enums.MediaType.Audio)
+                                {
+                                    <audio controls class="w-100">
+                                        <source src="@media.FilePath" />
+                                    </audio>
+                                }
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- Updates Section -->
+        @if (Model.Updates != null && Model.Updates.Any())
+        {
+            <div class="card mb-3">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">Güncellemeler</h5>
+                </div>
+                <div class="card-body">
+                    @foreach (var update in Model.Updates.OrderByDescending(u => u.CreatedAt))
+                    {
+                        <div class="mb-3 border-bottom pb-3">
+                            <div class="d-flex justify-content-between">
+                                <strong>@update.UpdatedBy?.FullName</strong>
+                                <small class="text-muted">@update.CreatedAt.ToString("dd.MM.yyyy HH:mm")</small>
+                            </div>
+                            <p class="mt-2 mb-1">@update.Message</p>
+                            <span class="badge bg-@GetStatusColor(update.NewStatus)">
+                                @GetStatusText(update.NewStatus)
+                            </span>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+
+    <div class="col-md-4">
+        <div class="card mb-3">
+            <div class="card-header bg-primary text-white">
+                <h6 class="mb-0">Durum Güncelle</h6>
+            </div>
+            <div class="card-body">
+                <form asp-action="UpdateStatus" method="post">
+                    <input type="hidden" name="complaintId" value="@Model.Id" />
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Yeni Durum</label>
+                        <select name="newStatus" class="form-select" required>
+                            <option value="">Seçiniz...</option>
+                            <option value="@((int)KamuKoprusu.Enums.ComplaintStatus.New)">Yeni</option>
+                            <option value="@((int)KamuKoprusu.Enums.ComplaintStatus.Viewed)">Görüldü</option>
+                            <option value="@((int)KamuKoprusu.Enums.ComplaintStatus.InProgress)">İşlemde</option>
+                            <option value="@((int)KamuKoprusu.Enums.ComplaintStatus.Resolved)">Çözüldü</option>
+                            <option value="@((int)KamuKoprusu.Enums.ComplaintStatus.Closed)">Kapatıldı</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Mesaj</label>
+                        <textarea name="message" class="form-control" rows="4" required placeholder="Vatandaşa gönderilecek açıklama..."></textarea>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-100">Güncelle</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header bg-secondary text-white">
+                <h6 class="mb-0">İşlemler</h6>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a asp-action="Complaints" class="btn btn-outline-primary">Şikayetlere Dön</a>
+                    <a asp-action="Dashboard" class="btn btn-outline-secondary">Dashboard</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@functions {
+    string GetStatusColor(KamuKoprusu.Enums.ComplaintStatus status)
+    {
+        return status switch
+        {
+            KamuKoprusu.Enums.ComplaintStatus.New => "info",
+            KamuKoprusu.Enums.ComplaintStatus.Viewed => "secondary",
+            KamuKoprusu.Enums.ComplaintStatus.InProgress => "warning",
+            KamuKoprusu.Enums.ComplaintStatus.Resolved => "success",
+            KamuKoprusu.Enums.ComplaintStatus.Rejected => "danger",
+            _ => "secondary"
+        };
+    }
+
+    string GetStatusText(KamuKoprusu.Enums.ComplaintStatus status)
+    {
+        return status switch
+        {
+            KamuKoprusu.Enums.ComplaintStatus.New => "Yeni",
+            KamuKoprusu.Enums.ComplaintStatus.Viewed => "Görüldü",
+            KamuKoprusu.Enums.ComplaintStatus.InProgress => "İşlemde",
+            KamuKoprusu.Enums.ComplaintStatus.Resolved => "Çözüldü",
+            KamuKoprusu.Enums.ComplaintStatus.Rejected => "Reddedildi",
+            KamuKoprusu.Enums.ComplaintStatus.Closed => "Kapatıldı",
+            _ => status.ToString()
+        };
+    }
+}

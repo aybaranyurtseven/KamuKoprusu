@@ -1,0 +1,217 @@
+@{
+    ViewData["Title"] = "İstatistikler ve Raporlar";
+    var monthlyStats = ViewBag.MonthlyStats as IEnumerable<dynamic>;
+    var institutionStats = ViewBag.InstitutionStats as IEnumerable<dynamic>;
+    var categoryStats = ViewBag.CategoryStats as IEnumerable<dynamic>;
+    var topCitizens = ViewBag.TopCitizens as IEnumerable<dynamic>;
+    var avgResolutionDays = ViewBag.AvgResolutionDays;
+}
+
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="bi bi-graph-up me-2"></i>@ViewData["Title"]</h2>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white h-100">
+                <div class="card-body text-center">
+                    <i class="bi bi-clock-history fs-1"></i>
+                    <h2 class="mt-2">@avgResolutionDays</h2>
+                    <p class="mb-0">Ortalama Çözüm Süresi (Gün)</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white h-100">
+                <div class="card-body text-center">
+                    <i class="bi bi-check-circle fs-1"></i>
+                    @{
+                        var totalMonthly = monthlyStats?.Sum(m => (int)m.Count) ?? 0;
+                        var resolvedMonthly = monthlyStats?.Sum(m => (int)m.Resolved) ?? 0;
+                        var resolutionRate = totalMonthly > 0 ? (resolvedMonthly * 100 / totalMonthly) : 0;
+                    }
+                    <h2 class="mt-2">%@resolutionRate</h2>
+                    <p class="mb-0">Çözüm Oranı (6 Ay)</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white h-100">
+                <div class="card-body text-center">
+                    <i class="bi bi-file-earmark-text fs-1"></i>
+                    <h2 class="mt-2">@totalMonthly</h2>
+                    <p class="mb-0">Son 6 Ay Başvuru</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-dark h-100">
+                <div class="card-body text-center">
+                    <i class="bi bi-building fs-1"></i>
+                    <h2 class="mt-2">@(institutionStats?.Count() ?? 0)</h2>
+                    <p class="mb-0">Aktif Kurum</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Monthly Statistics -->
+        <div class="col-lg-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-calendar-month me-2"></i>Aylık Başvuru İstatistikleri</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Ay</th>
+                                    <th>Toplam</th>
+                                    <th>Çözülen</th>
+                                    <th>Oran</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @if (monthlyStats != null)
+                                {
+                                    foreach (var stat in monthlyStats)
+                                    {
+                                        var monthName = new DateTime((int)stat.Year, (int)stat.Month, 1).ToString("MMM yyyy");
+                                        var rate = (int)stat.Count > 0 ? ((int)stat.Resolved * 100 / (int)stat.Count) : 0;
+                                        <tr>
+                                            <td>@monthName</td>
+                                            <td><strong>@stat.Count</strong></td>
+                                            <td class="text-success">@stat.Resolved</td>
+                                            <td>
+                                                <div class="progress" style="height: 20px;">
+                                                    <div class="progress-bar bg-success" style="width: @rate%">@rate%</div>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    }
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Institution Statistics -->
+        <div class="col-lg-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-building me-2"></i>Kurum Bazlı İstatistikler (Top 10)</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Kurum</th>
+                                    <th>Toplam</th>
+                                    <th>Çözülen</th>
+                                    <th>Bekleyen</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @if (institutionStats != null)
+                                {
+                                    foreach (var stat in institutionStats)
+                                    {
+                                        <tr>
+                                            <td>@stat.Institution</td>
+                                            <td><strong>@stat.Total</strong></td>
+                                            <td class="text-success">@stat.Resolved</td>
+                                            <td class="text-warning">@stat.Pending</td>
+                                        </tr>
+                                    }
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Category Statistics -->
+        <div class="col-lg-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-tags me-2"></i>Kategori Dağılımı</h5>
+                </div>
+                <div class="card-body">
+                    @if (categoryStats != null)
+                    {
+                        var totalCat = categoryStats.Sum(c => (int)c.Count);
+                        foreach (var stat in categoryStats)
+                        {
+                            var percentage = totalCat > 0 ? ((int)stat.Count * 100 / totalCat) : 0;
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between mb-1">
+                                    <span>@stat.Type</span>
+                                    <span>@stat.Count (@percentage%)</span>
+                                </div>
+                                <div class="progress" style="height: 10px;">
+                                    <div class="progress-bar" style="width: @percentage%"></div>
+                                </div>
+                            </div>
+                        }
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Top Citizens -->
+        <div class="col-lg-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-people me-2"></i>En Aktif Vatandaşlar (Top 10)</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Vatandaş</th>
+                                    <th>Başvuru</th>
+                                    <th>Çözülen</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @if (topCitizens != null)
+                                {
+                                    var rank = 1;
+                                    foreach (var citizen in topCitizens)
+                                    {
+                                        <tr>
+                                            <td>
+                                                @if (rank <= 3)
+                                                {
+                                                    <span class="badge bg-warning text-dark">@rank</span>
+                                                }
+                                                else
+                                                {
+                                                    @rank
+                                                }
+                                            </td>
+                                            <td>@citizen.User</td>
+                                            <td><strong>@citizen.ComplaintCount</strong></td>
+                                            <td class="text-success">@citizen.ResolvedCount</td>
+                                        </tr>
+                                        rank++;
+                                    }
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

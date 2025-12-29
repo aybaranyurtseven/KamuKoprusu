@@ -1,0 +1,65 @@
+﻿@{
+    ViewData["Title"] = "Admin Dashboard";
+    var stats = ViewBag.Stats;
+}
+
+<div class="container-fluid">
+    <h2>Admin Dashboard</h2>
+    <p class="text-muted">Sistem yönetim paneli</p>
+    <hr />
+
+    <div class="row g-4 mb-4">
+        <div class="col-md-3">
+            <div class="card border-primary">
+                <div class="card-body">
+                    <h5 class="card-title text-primary">Toplam Kullanıcı</h5>
+                    <h2>@stats.TotalUsers</h2>
+                    <a asp-action="Users" class="btn btn-sm btn-outline-primary">Görüntüle</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card border-warning">
+                <div class="card-body">
+                    <h5 class="card-title text-warning">Onay Bekleyen</h5>
+                    <h2>@stats.PendingApprovals</h2>
+                    <a asp-action="InstitutionApprovals" class="btn btn-sm btn-outline-warning">Onayla</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card border-danger">
+                <div class="card-body">
+                    <h5 class="card-title text-danger">Yasaklı Kullanıcı</h5>
+                    <h2>@stats.BannedUsers</h2>
+                    <a asp-action="Users" asp-route-status="banned" class="btn btn-sm btn-outline-danger">Görüntüle</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card border-success">
+                <div class="card-body">
+                    <h5 class="card-title text-success">Toplam Şikayet</h5>
+                    <h2>@stats.TotalComplaints</h2>
+                    <small class="text-muted">@stats.ResolvedComplaints çözüldü</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-12">
+            <div class="list-group">
+                <a asp-action="Users" class="list-group-item list-group-item-action">
+                    <strong>Kullanıcı Yönetimi</strong> - Tüm kullanıcıları görüntüle ve yönet
+                </a>
+                <a asp-action="InstitutionApprovals" class="list-group-item list-group-item-action">
+                    <strong>Kurum Onayları</strong> - Bekleyen kurum temsilcisi başvurularını onayla
+                </a>
+            </div>
+        </div>
+    </div>
+</div>

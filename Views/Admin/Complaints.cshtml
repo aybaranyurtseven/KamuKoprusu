@@ -1,0 +1,177 @@
+@model IEnumerable<KamuKoprusu.Models.Complaint>
+@{
+    ViewData["Title"] = "Başvuru Yönetimi";
+    var institutions = ViewBag.Institutions as List<KamuKoprusu.Models.Institution>;
+}
+
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="bi bi-file-earmark-text me-2"></i>@ViewData["Title"]</h2>
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show">
+            @TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <!-- Filters -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-3">
+                    <label class="form-label">Durum</label>
+                    <select name="status" class="form-select">
+                        <option value="">Tümü</option>
+                        <option value="PendingModeration" selected="@(ViewBag.StatusFilter == "PendingModeration")">Moderatör İncelemesinde</option>
+                        <option value="New" selected="@(ViewBag.StatusFilter == "New")">Yeni</option>
+                        <option value="Viewed" selected="@(ViewBag.StatusFilter == "Viewed")">Görüldü</option>
+                        <option value="InProgress" selected="@(ViewBag.StatusFilter == "InProgress")">İşlemde</option>
+                        <option value="Resolved" selected="@(ViewBag.StatusFilter == "Resolved")">Çözüldü</option>
+                        <option value="Rejected" selected="@(ViewBag.StatusFilter == "Rejected")">Reddedildi</option>
+                        <option value="Closed" selected="@(ViewBag.StatusFilter == "Closed")">Kapatıldı</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Kurum</label>
+                    <select name="institutionId" class="form-select">
+                        <option value="">Tümü</option>
+                        @if (institutions != null)
+                        {
+                            foreach (var inst in institutions)
+                            {
+                                <option value="@inst.Id" selected="@(ViewBag.InstitutionId != null && ViewBag.InstitutionId == inst.Id)">@inst.Name</option>
+                            }
+                        }
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Arama</label>
+                    <input type="text" name="search" class="form-control" placeholder="Başlık veya açıklama..." value="@ViewBag.Search" />
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-search me-1"></i> Filtrele
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Results -->
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th>ID</th>
+                            <th>Başlık</th>
+                            <th>Gönderen</th>
+                            <th>Kurum</th>
+                            <th>Durum</th>
+                            <th>Tarih</th>
+                            <th>İşlemler</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var complaint in Model)
+                        {
+                            <tr>
+                                <td><strong>#@complaint.Id</strong></td>
+                                <td>
+                                    <a asp-action="ComplaintDetail" asp-route-id="@complaint.Id" class="text-decoration-none">
+                                        @(complaint.Title.Length > 40 ? complaint.Title.Substring(0, 40) + "..." : complaint.Title)
+                                    </a>
+                                </td>
+                                <td>
+                                    @if (complaint.IsAnonymous)
+                                    {
+                                        <span class="text-muted"><i class="bi bi-incognito"></i> Anonim</span>
+                                    }
+                                    else
+                                    {
+                                        @complaint.User?.FullName
+                                    }
+                                </td>
+                                <td>@complaint.Institution?.Name</td>
+                                <td>
+                                    @{
+                                        var statusClass = complaint.Status switch
+                                        {
+                                            KamuKoprusu.Enums.ComplaintStatus.PendingModeration => "bg-warning text-dark",
+                                            KamuKoprusu.Enums.ComplaintStatus.New => "bg-info",
+                                            KamuKoprusu.Enums.ComplaintStatus.InProgress => "bg-primary",
+                                            KamuKoprusu.Enums.ComplaintStatus.Resolved => "bg-success",
+                                            KamuKoprusu.Enums.ComplaintStatus.Rejected => "bg-danger",
+                                            _ => "bg-secondary"
+                                        };
+                                        var statusText = complaint.Status switch
+                                        {
+                                            KamuKoprusu.Enums.ComplaintStatus.PendingModeration => "Beklemede",
+                                            KamuKoprusu.Enums.ComplaintStatus.New => "Yeni",
+                                            KamuKoprusu.Enums.ComplaintStatus.Viewed => "Görüldü",
+                                            KamuKoprusu.Enums.ComplaintStatus.InProgress => "İşlemde",
+                                            KamuKoprusu.Enums.ComplaintStatus.Resolved => "Çözüldü",
+                                            KamuKoprusu.Enums.ComplaintStatus.Rejected => "Reddedildi",
+                                            _ => "Kapatıldı"
+                                        };
+                                    }
+                                    <span class="badge @statusClass">@statusText</span>
+                                </td>
+                                <td>@complaint.CreatedAt.ToString("dd.MM.yyyy")</td>
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        <a asp-action="ComplaintDetail" asp-route-id="@complaint.Id" class="btn btn-outline-primary" title="Detay">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                        <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteModal-@complaint.Id" title="Sil">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </div>
+
+                                    <!-- Delete Modal -->
+                                    <div class="modal fade" id="deleteModal-@complaint.Id" tabindex="-1">
+                                        <div class="modal-dialog">
+                                            <div class="modal-content">
+                                                <div class="modal-header">
+                                                    <h5 class="modal-title">Başvuru Sil</h5>
+                                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                </div>
+                                                <form asp-action="DeleteComplaint" method="post">
+                                                    <div class="modal-body">
+                                                        <input type="hidden" name="id" value="@complaint.Id" />
+                                                        <p>Bu başvuruyu silmek istediğinizden emin misiniz?</p>
+                                                        <p><strong>@complaint.Title</strong></p>
+                                                        <div class="mb-3">
+                                                            <label class="form-label">Silme Nedeni</label>
+                                                            <textarea name="reason" class="form-control" rows="2" required></textarea>
+                                                        </div>
+                                                    </div>
+                                                    <div class="modal-footer">
+                                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+                                                        <button type="submit" class="btn btn-danger">Sil</button>
+                                                    </div>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            @if (!Model.Any())
+            {
+                <div class="text-center py-5 text-muted">
+                    <i class="bi bi-inbox fs-1"></i>
+                    <p class="mt-2">Başvuru bulunamadı.</p>
+                </div>
+            }
+        </div>
+    </div>
+</div>

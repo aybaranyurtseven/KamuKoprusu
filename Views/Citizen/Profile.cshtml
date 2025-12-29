@@ -1,0 +1,208 @@
+@model KamuKoprusu.Models.ApplicationUser
+@{
+    ViewData["Title"] = "Profilim";
+    var stats = ViewBag.Stats;
+    var recentComplaints = ViewBag.RecentComplaints as List<KamuKoprusu.Models.Complaint>;
+}
+
+<div class="container">
+    <div class="row">
+        <!-- Profile Info -->
+        <div class="col-lg-4 mb-4">
+            <div class="card">
+                <div class="card-body text-center">
+                    <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center mx-auto mb-3" style="width: 100px; height: 100px; font-size: 2rem;">
+                        @Model.FullName?.Substring(0, 1).ToUpper()
+                    </div>
+                    <h4>@Model.FullName</h4>
+                    <p class="text-muted">@Model.Email</p>
+                    
+                    @if (Model.Profile != null)
+                    {
+                        @if (!string.IsNullOrEmpty(Model.Profile.City))
+                        {
+                            <p><i class="bi bi-geo-alt me-1"></i> @Model.Profile.City@(Model.Profile.District != null ? ", " + Model.Profile.District : "")</p>
+                        }
+                        @if (!string.IsNullOrEmpty(Model.Profile.Bio))
+                        {
+                            <p class="text-muted">@Model.Profile.Bio</p>
+                        }
+                    }
+
+                    <!-- Level Badge -->
+                    <div class="my-3">
+                        @{
+                            var levelText = Model.Level switch
+                            {
+                                KamuKoprusu.Enums.UserLevel.Bronze => "Bronz",
+                                KamuKoprusu.Enums.UserLevel.Silver => "Gümüş",
+                                KamuKoprusu.Enums.UserLevel.Gold => "Altın",
+                                KamuKoprusu.Enums.UserLevel.Platinum => "Platin",
+                                KamuKoprusu.Enums.UserLevel.Diamond => "Elmas",
+                                _ => "Bronz"
+                            };
+                            var levelClass = Model.Level switch
+                            {
+                                KamuKoprusu.Enums.UserLevel.Bronze => "bg-warning",
+                                KamuKoprusu.Enums.UserLevel.Silver => "bg-secondary",
+                                KamuKoprusu.Enums.UserLevel.Gold => "bg-warning text-dark",
+                                KamuKoprusu.Enums.UserLevel.Platinum => "bg-info",
+                                KamuKoprusu.Enums.UserLevel.Diamond => "bg-primary",
+                                _ => "bg-warning"
+                            };
+                        }
+                        <span class="badge @levelClass fs-6">@levelText Seviye</span>
+                        <p class="text-muted small mt-2">@Model.ReputationScore puan</p>
+                    </div>
+
+                    <a asp-action="EditProfile" class="btn btn-outline-primary">
+                        <i class="bi bi-pencil me-1"></i> Profili Düzenle
+                    </a>
+                </div>
+            </div>
+
+            <!-- Badges Card -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="bi bi-award me-2"></i>Rozetlerim</h6>
+                </div>
+                <div class="card-body">
+                    @if (Model.UserBadges != null && Model.UserBadges.Any())
+                    {
+                        <div class="d-flex flex-wrap gap-2">
+                            @foreach (var ub in Model.UserBadges.Take(4))
+                            {
+                                <div class="text-center p-2 bg-success bg-opacity-25 rounded" style="width: 60px;" title="@ub.Badge?.Description">
+                                    <i class="bi @(ub.Badge?.IconClass ?? "bi-award")" style="font-size: 1.5rem; color: #198754;"></i>
+                                    <small class="d-block text-truncate">@ub.Badge?.Name</small>
+                                </div>
+                            }
+                        </div>
+                        <a asp-action="Achievements" class="btn btn-sm btn-outline-primary mt-2 w-100">Tümünü Gör</a>
+                    }
+                    else
+                    {
+                        <p class="text-muted text-center mb-2">Henüz rozet kazanmadınız.</p>
+                        <a asp-action="Achievements" class="btn btn-sm btn-outline-primary w-100">Rozetleri Keşfet</a>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="col-lg-8">
+            @if (TempData["Success"] != null)
+            {
+                <div class="alert alert-success alert-dismissible fade show">
+                    @TempData["Success"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            }
+
+            <!-- Stats Cards -->
+            <div class="row g-3 mb-4">
+                <div class="col-6 col-md-3">
+                    <div class="card bg-primary text-white h-100">
+                        <div class="card-body text-center py-3">
+                            <h3 class="mb-0">@stats.TotalComplaints</h3>
+                            <small>Toplam</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="card bg-warning text-dark h-100">
+                        <div class="card-body text-center py-3">
+                            <h3 class="mb-0">@stats.PendingComplaints</h3>
+                            <small>Beklemede</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="card bg-info text-white h-100">
+                        <div class="card-body text-center py-3">
+                            <h3 class="mb-0">@stats.InProgressComplaints</h3>
+                            <small>İşlemde</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="card bg-success text-white h-100">
+                        <div class="card-body text-center py-3">
+                            <h3 class="mb-0">@stats.ResolvedComplaints</h3>
+                            <small>Çözüldü</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="d-flex gap-2 mb-4">
+                <a asp-action="Create" class="btn btn-primary">
+                    <i class="bi bi-plus-lg me-1"></i> Yeni Başvuru
+                </a>
+                <a asp-action="MyComplaints" class="btn btn-outline-secondary">
+                    <i class="bi bi-list-ul me-1"></i> Tüm Başvurularım
+                </a>
+            </div>
+
+            <!-- Recent Complaints -->
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="bi bi-clock-history me-2"></i>Son Başvurularım</h5>
+                    <a asp-action="MyComplaints" class="btn btn-sm btn-outline-primary">Tümü</a>
+                </div>
+                <div class="card-body">
+                    @if (recentComplaints != null && recentComplaints.Any())
+                    {
+                        <div class="list-group list-group-flush">
+                            @foreach (var complaint in recentComplaints)
+                            {
+                                <a asp-action="Detail" asp-route-id="@complaint.Id" class="list-group-item list-group-item-action">
+                                    <div class="d-flex w-100 justify-content-between">
+                                        <h6 class="mb-1">@complaint.Title</h6>
+                                        <small class="text-muted">@complaint.CreatedAt.ToString("dd.MM.yyyy")</small>
+                                    </div>
+                                    <p class="mb-1 text-muted text-truncate small">@complaint.Description</p>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <small class="text-muted">@complaint.Institution?.Name</small>
+                                        @{
+                                            var statusClass = complaint.Status switch
+                                            {
+                                                KamuKoprusu.Enums.ComplaintStatus.PendingModeration => "bg-warning text-dark",
+                                                KamuKoprusu.Enums.ComplaintStatus.New => "bg-info",
+                                                KamuKoprusu.Enums.ComplaintStatus.InProgress => "bg-primary",
+                                                KamuKoprusu.Enums.ComplaintStatus.Resolved => "bg-success",
+                                                KamuKoprusu.Enums.ComplaintStatus.Rejected => "bg-danger",
+                                                _ => "bg-secondary"
+                                            };
+                                            var statusText = complaint.Status switch
+                                            {
+                                                KamuKoprusu.Enums.ComplaintStatus.PendingModeration => "Onay Bekliyor",
+                                                KamuKoprusu.Enums.ComplaintStatus.New => "Yeni",
+                                                KamuKoprusu.Enums.ComplaintStatus.InProgress => "İşlemde",
+                                                KamuKoprusu.Enums.ComplaintStatus.Resolved => "Çözüldü",
+                                                KamuKoprusu.Enums.ComplaintStatus.Rejected => "Reddedildi",
+                                                _ => complaint.Status.ToString()
+                                            };
+                                        }
+                                        <span class="badge @statusClass">@statusText</span>
+                                    </div>
+                                </a>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center py-4">
+                            <i class="bi bi-inbox fs-1 text-muted"></i>
+                            <p class="mt-2 text-muted">Henüz başvuru göndermediniz.</p>
+                            <a asp-action="Create" class="btn btn-primary">
+                                <i class="bi bi-plus-lg me-1"></i> İlk Başvurunuzu Gönderin
+                            </a>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

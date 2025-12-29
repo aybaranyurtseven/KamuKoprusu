@@ -1,0 +1,261 @@
+@model KamuKoprusu.Models.Complaint
+@{
+    ViewData["Title"] = "Başvuru İnceleme";
+    var userWarnings = ViewBag.UserWarnings as List<KamuKoprusu.Models.Warning>;
+}
+
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="bi bi-eye me-2"></i>Başvuru #@Model.Id İnceleme</h2>
+        <a asp-action="ReviewContent" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-1"></i> Listeye Dön
+        </a>
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show">
+            @TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <div class="row">
+        <!-- Main Content -->
+        <div class="col-lg-8">
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">@Model.Title</h5>
+                    @{
+                        var statusClass = Model.Status switch
+                        {
+                            KamuKoprusu.Enums.ComplaintStatus.PendingModeration => "bg-warning text-dark",
+                            KamuKoprusu.Enums.ComplaintStatus.Rejected => "bg-danger",
+                            _ => "bg-info"
+                        };
+                    }
+                    <span class="badge @statusClass">@Model.Status</span>
+                </div>
+                <div class="card-body">
+                    <p class="lead">@Model.Description</p>
+                    
+                    @if (!string.IsNullOrEmpty(Model.RejectionReason))
+                    {
+                        <div class="alert alert-danger">
+                            <strong>Red Nedeni:</strong> @Model.RejectionReason
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <!-- Media Files -->
+            @if (Model.MediaFiles != null && Model.MediaFiles.Any())
+            {
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="bi bi-paperclip me-2"></i>Ekli Dosyalar (@Model.MediaFiles.Count)</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            @foreach (var media in Model.MediaFiles)
+                            {
+                                <div class="col-md-4 mb-3">
+                                    @if (media.Type == KamuKoprusu.Enums.MediaType.Photo)
+                                    {
+                                        <a href="@media.FilePath" target="_blank">
+                                            <img src="@media.FilePath" class="img-fluid rounded shadow-sm" />
+                                        </a>
+                                    }
+                                    else
+                                    {
+                                        <div class="p-4 bg-light rounded text-center">
+                                            <i class="bi bi-file-earmark-play fs-1"></i>
+                                            <p class="mb-0 mt-2">@media.FileName</p>
+                                            <small class="text-muted">@media.Type</small>
+                                        </div>
+                                    }
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            <!-- Info Card -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Başvuru Bilgileri</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-sm">
+                        <tr>
+                            <th>Tür</th>
+                            <td>@Model.Type</td>
+                        </tr>
+                        <tr>
+                            <th>Kategori</th>
+                            <td>@Model.Category</td>
+                        </tr>
+                        <tr>
+                            <th>Kurum</th>
+                            <td>@Model.Institution?.Name</td>
+                        </tr>
+                        <tr>
+                            <th>Tarih</th>
+                            <td>@Model.CreatedAt.ToString("dd.MM.yyyy HH:mm")</td>
+                        </tr>
+                        @if (!string.IsNullOrEmpty(Model.Location))
+                        {
+                            <tr>
+                                <th>Konum</th>
+                                <td>@Model.Location</td>
+                            </tr>
+                        }
+                    </table>
+                </div>
+            </div>
+
+            <!-- User Info Card -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Gönderen Bilgileri</h5>
+                </div>
+                <div class="card-body">
+                    @if (Model.IsAnonymous)
+                    {
+                        <div class="text-center text-muted py-3">
+                            <i class="bi bi-incognito fs-1"></i>
+                            <p class="mb-0 mt-2">Anonim Başvuru</p>
+                        </div>
+                    }
+                    else if (Model.User != null)
+                    {
+                        <p><strong>@Model.User.FullName</strong></p>
+                        <p class="text-muted mb-2">@Model.User.Email</p>
+                        
+                        @if (userWarnings != null && userWarnings.Any())
+                        {
+                            <div class="alert alert-warning">
+                                <i class="bi bi-exclamation-triangle me-1"></i>
+                                Bu kullanıcının <strong>@userWarnings.Count uyarısı</strong> var.
+                            </div>
+                        }
+                    }
+                </div>
+            </div>
+
+            <!-- Actions -->
+            @if (Model.Status == KamuKoprusu.Enums.ComplaintStatus.PendingModeration)
+            {
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">İşlemler</h5>
+                    </div>
+                    <div class="card-body">
+                        <form asp-action="ApproveComplaint" method="post" class="mb-2">
+                            <input type="hidden" name="id" value="@Model.Id" />
+                            <button type="submit" class="btn btn-success w-100">
+                                <i class="bi bi-check-lg me-1"></i> Onayla
+                            </button>
+                        </form>
+                        
+                        <button type="button" class="btn btn-danger w-100 mb-2" data-bs-toggle="modal" data-bs-target="#rejectModal">
+                            <i class="bi bi-x-lg me-1"></i> Reddet
+                        </button>
+
+                        @if (!Model.IsAnonymous && Model.User != null)
+                        {
+                            <hr />
+                            <button type="button" class="btn btn-warning w-100" data-bs-toggle="modal" data-bs-target="#warnModal">
+                                <i class="bi bi-exclamation-triangle me-1"></i> Kullanıcıyı Uyar
+                            </button>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- Reject Modal -->
+<div class="modal fade" id="rejectModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Başvuruyu Reddet</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form asp-action="RejectComplaint" method="post">
+                <div class="modal-body">
+                    <input type="hidden" name="id" value="@Model.Id" />
+                    <div class="mb-3">
+                        <label class="form-label">Red Nedeni</label>
+                        <select name="reason" class="form-select" required>
+                            <option value="Uygunsuz içerik">Uygunsuz içerik</option>
+                            <option value="Spam veya tekrarlanan başvuru">Spam veya tekrarlanan başvuru</option>
+                            <option value="Yanlış veya yanıltıcı bilgi">Yanlış veya yanıltıcı bilgi</option>
+                            <option value="İlgisiz konu">İlgisiz konu</option>
+                            <option value="Hakaret veya küfür içeriyor">Hakaret veya küfür içeriyor</option>
+                            <option value="Diğer">Diğer</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+                    <button type="submit" class="btn btn-danger">Reddet</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Warn User Modal -->
+@if (!Model.IsAnonymous && Model.User != null)
+{
+    <div class="modal fade" id="warnModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Kullanıcıyı Uyar</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form asp-action="WarnUser" method="post">
+                    <div class="modal-body">
+                        <input type="hidden" name="userId" value="@Model.User.Id" />
+                        <input type="hidden" name="complaintId" value="@Model.Id" />
+                        
+                        <div class="alert alert-warning">
+                            <strong>Dikkat:</strong> Uyarı sistemi kademeli çalışır:
+                            <ul class="mb-0 mt-2">
+                                <li>1. Uyarı: Bildirim</li>
+                                <li>2. Uyarı: 7 gün askıya alma</li>
+                                <li>3. Uyarı: 30 gün askıya alma</li>
+                                <li>4. Uyarı: Kalıcı yasaklama</li>
+                            </ul>
+                        </div>
+                        
+                        @if (userWarnings != null && userWarnings.Any())
+                        {
+                            <div class="alert alert-danger">
+                                Bu kullanıcının şu anda <strong>@userWarnings.Count uyarısı</strong> var.
+                                Bu uyarı <strong>@(userWarnings.Count + 1). uyarı</strong> olacak.
+                            </div>
+                        }
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Uyarı Nedeni</label>
+                            <textarea name="reason" class="form-control" rows="3" required placeholder="Neden bu kullanıcıyı uyarıyorsunuz?"></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+                        <button type="submit" class="btn btn-warning">Uyar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+}
